@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="GYM"/>
+<meta name="theme-color" content="#08090B"/>
+<title>GYM Stéphane</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#08090B;--bg2:#0E1013;--surface:#15181C;--surface2:#1E2228;
+  --fg:#F5F6F8;--fg2:#A8B0BC;--fg3:#6B7280;
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.15);
+  --acc:#EAD08A;
+  --d-lun:#4D8DFF;--d-mar:#A78BFF;--d-mer:#2DD4BF;
+  --d-jeu:#B6F23E;--d-ven:#FF4D6D;--d-vac:#EAD08A;
+  --good:#46D08A;--warn:#F59E0B;--danger:#EF4444;
+  --r:14px;--r2:10px;--r3:8px;
+  --font-disp:'Archivo',system-ui,sans-serif;
+  --font-ui:'Space Grotesk',system-ui,sans-serif;
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);
+  font-family:var(--font-ui);overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+.safe-top{height:env(safe-area-inset-top,50px);min-height:44px;flex-shrink:0}
+.safe-bot{height:env(safe-area-inset-bottom,20px);flex-shrink:0}
+
+/* TABBAR */
+.tabbar{display:flex;background:rgba(14,16,19,.95);backdrop-filter:blur(20px);
+  border-top:1px solid var(--line2);padding:8px 0;flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:4px 0;cursor:pointer;opacity:.5;transition:opacity .2s}
+.tab.active{opacity:1}
+.tab svg{width:22px;height:22px}
+.tab span{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+
+/* SCREEN */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  display:none;flex-direction:column;padding-bottom:8px}
+.screen.active{display:flex}
+
+/* HEADER */
+.screen-header{padding:16px 20px 12px;flex-shrink:0}
+.screen-title{font-family:var(--font-disp);font-size:28px;font-weight:800;
+  letter-spacing:-.5px;line-height:1.1}
+.screen-sub{font-size:13px;color:var(--fg2);margin-top:2px}
+
+/* PROGRAMME TABS */
+.prog-tabs{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;flex-shrink:0}
+.prog-tabs::-webkit-scrollbar{display:none}
+.prog-tab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;
+  border:1.5px solid var(--line2);color:var(--fg2);background:transparent;
+  transition:all .15s}
+.prog-tab.active{background:var(--acc);color:#000;border-color:var(--acc)}
+
+/* SESSION TABS */
+.sess-tabs{display:flex;gap:6px;padding:0 20px 14px;overflow-x:auto;flex-shrink:0}
+.sess-tabs::-webkit-scrollbar{display:none}
+.sess-tab{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;
+  border:1.5px solid var(--line2);color:var(--fg2);background:transparent;transition:all .15s}
+.sess-tab.active{color:#000;border-color:transparent}
+
+/* NOTE CARD */
+.note-card{margin:0 20px 14px;padding:12px 14px;border-radius:var(--r2);
+  background:rgba(70,208,138,.08);border:1px solid rgba(70,208,138,.2);
+  font-size:12px;color:var(--good);line-height:1.5}
+
+/* GROUPE */
+.groupe-label{padding:4px 20px 8px;font-size:11px;font-weight:700;
+  letter-spacing:1.2px;text-transform:uppercase;color:var(--acc)}
+
+/* EXERCICE CARD */
+.ex-card{margin:0 20px 10px;background:var(--surface);border-radius:var(--r);
+  border:1px solid var(--line);overflow:hidden;transition:border-color .15s}
+.ex-card.editing{border-color:var(--acc)}
+.ex-top{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.ex-name{flex:1;font-size:15px;font-weight:600;line-height:1.3}
+.ex-timer-btn{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;
+  background:transparent;border:1.5px solid var(--acc);color:var(--acc);cursor:pointer;
+  min-width:48px;text-align:center;transition:all .15s;font-family:var(--font-ui)}
+.ex-timer-btn.running{background:var(--acc);color:#000}
+.ex-edit-btn{width:32px;height:32px;border-radius:8px;background:var(--surface2);
+  border:none;color:var(--fg2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ex-tags{display:flex;gap:6px;padding:0 14px 10px;flex-wrap:wrap;align-items:center}
+.tag{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;
+  background:var(--surface2);color:var(--fg2)}
+.tag.target{background:rgba(239,68,68,.12);color:#F87171}
+.tag.sciat{background:rgba(245,158,11,.12);color:var(--warn)}
+.ex-note{padding:0 14px 10px;font-size:12px;color:var(--fg3);font-style:italic;line-height:1.4}
+
+/* EDIT PANEL */
+.edit-panel{background:var(--surface2);border-top:1px solid var(--line2);padding:12px 14px;display:none}
+.edit-panel.open{display:block}
+.edit-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.edit-label{font-size:11px;color:var(--fg2);font-weight:600;width:52px;flex-shrink:0}
+.edit-input{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;
+  color:var(--fg);font-size:14px;padding:7px 10px;font-family:var(--font-ui);outline:none;
+  -webkit-appearance:none}
+.edit-input:focus{border-color:var(--acc)}
+.edit-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;
+  cursor:pointer;border:none;font-family:var(--font-ui);transition:all .15s}
+.btn-primary{background:var(--acc);color:#000}
+.btn-secondary{background:var(--surface);color:var(--fg2);border:1px solid var(--line2)}
+.btn-danger{background:rgba(239,68,68,.15);color:#F87171;border:1px solid rgba(239,68,68,.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ADD EXERCICE */
+.add-ex-btn{margin:4px 20px 16px;padding:10px;border-radius:var(--r2);
+  background:transparent;border:1.5px dashed var(--line2);color:var(--fg3);
+  font-size:13px;font-weight:600;cursor:pointer;width:calc(100% - 40px);
+  font-family:var(--font-ui);transition:all .15s;display:flex;align-items:center;
+  justify-content:center;gap:6px}
+.add-ex-btn:active{border-color:var(--acc);color:var(--acc)}
+
+/* TIMER OVERLAY */
+#timer-overlay{position:fixed;inset:0;background:rgba(8,9,11,.96);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100}
+#timer-overlay.show{display:flex}
+.timer-ring{position:relative;width:200px;height:200px;margin-bottom:24px}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring-bg{fill:none;stroke:var(--surface2);stroke-width:8}
+.timer-ring-fg{fill:none;stroke-width:8;stroke-linecap:round;
+  transition:stroke-dashoffset .5s linear,stroke .3s}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-disp);font-size:52px;font-weight:800}
+.timer-label{font-size:14px;color:var(--fg2);margin-bottom:32px;text-align:center}
+.timer-controls{display:flex;gap:12px}
+
+/* MINI TIMER */
+#mini-timer{position:fixed;bottom:80px;right:16px;background:var(--surface2);
+  border:1px solid var(--line2);border-radius:12px;padding:8px 12px;
+  display:none;align-items:center;gap:8px;z-index:50;cursor:pointer}
+#mini-timer.show{display:flex}
+.mini-timer-num{font-family:var(--font-disp);font-size:18px;font-weight:800}
+
+/* MODAL */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
+  display:none;align-items:flex-end}
+#modal.show{display:flex}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;
+  width:100%;padding:20px;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;text-align:center}
+.modal-list{display:flex;flex-direction:column;gap:4px}
+.modal-item{padding:12px 14px;border-radius:10px;background:var(--surface2);
+  font-size:14px;cursor:pointer;transition:background .15s}
+.modal-item:active{background:var(--bg2)}
+.modal-cat{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--fg3);padding:10px 4px 4px}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 16px}
+.stat-card{background:var(--surface);border-radius:var(--r2);padding:14px;
+  border:1px solid var(--line)}
+.stat-val{font-family:var(--font-disp);font-size:22px;font-weight:800;line-height:1}
+.stat-label{font-size:11px;color:var(--fg2);margin-top:4px;font-weight:600;letter-spacing:.3px}
+.stat-delta{font-size:11px;font-weight:700;margin-top:6px}
+.stat-delta.up{color:var(--good)}
+.stat-delta.down{color:var(--danger)}
+
+/* CHART */
+.chart-wrap{margin:0 20px 16px;background:var(--surface);border-radius:var(--r);
+  border:1px solid var(--line);padding:16px}
+.chart-title{font-size:13px;font-weight:700;color:var(--fg2);margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:80px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .3s}
+.chart-bar-lbl{font-size:9px;color:var(--fg3);font-weight:600}
+
+/* PERIOD TABS */
+.period-tabs{display:flex;gap:6px;padding:0 20px 12px}
+.period-tab{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;
+  letter-spacing:.3px;cursor:pointer;border:none;font-family:var(--font-ui);
+  background:var(--surface2);color:var(--fg2);transition:all .15s}
+.period-tab.active{background:var(--acc);color:#000}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.screen.active .ex-card{animation:fadeUp .25s ease both}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="safe-top"></div>
+  <div id="screen-home" class="screen active"></div>
+  <div id="screen-stats" class="screen"></div>
+  <div class="tabbar">
+    <div class="tab active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Programme</span>
+    </div>
+    <div class="tab" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Stats</span>
+    </div>
+  </div>
+  <div class="safe-bot"></div>
+</div>
+
+<!-- TIMER OVERLAY -->
+<div id="timer-overlay">
+  <div class="timer-ring">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle class="timer-ring-bg" cx="100" cy="100" r="88"/>
+      <circle id="timer-arc" class="timer-ring-fg" cx="100" cy="100" r="88"
+        stroke-dasharray="552.9" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-num" id="timer-num">0</div>
+  </div>
+  <div class="timer-label" id="timer-label">Repos</div>
+  <div class="timer-controls">
+    <button class="btn btn-secondary" onclick="stopTimer()">Arrêter</button>
+    <button class="btn btn-primary" onclick="skipTimer()">Passer →</button>
+  </div>
+</div>
+
+<!-- MINI TIMER -->
+<div id="mini-timer" onclick="showTimerOverlay()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+  <span class="mini-timer-num" id="mini-num">0s</span>
+</div>
+
+<!-- MODAL CATALOGUE -->
+<div id="modal" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-title">Choisir un exercice</div>
+    <div class="modal-list" id="modal-list"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DONNÉES
+// ============================================================
+const CATALOG = {
+  'ÉPAULES':['Développé militaire','Développé Arnold','Élévations latérales haltères','Élévations frontales','Élévations frontales alternées','Oiseau penché (rear delt)','Face pull','Shrugs haltères','Développé militaire haltères assis','Oiseau poulie'],
+  'PECS':['Développé couché barre','Développé incliné barre','Développé couché haltères','Développé incliné haltères','Presse pectorale machine inclinée','Écarté poulie basse (crossover)','Écarté haltères','Dips lestés'],
+  'DOS':['Soulevé de terre','Tractions','Tractions lestées','Tirage poulie haute prise large','Rowing assis poulie basse','Rowing haltère unilatéral avec appui','Rowing barre','Face pull','Tirage horizontal'],
+  'JAMBES':['Squat barre','Squat Smith','Leg press','Fentes marchées','Fentes statiques','Fentes bulgares','Leg extension','Leg curl assis machine','Hip thrust','Abducteur machine assis'],
+  'BRAS':['Curl haltères','Curl marteau','Curl barre','Triceps extension poulie haute','Barre au front','Dips'],
+  'ABDOS':['Crunch poulie','Relevés jambes suspendu','Gainage','Crunch machine'],
+  'CARDIO':['Assault bike','Vélo','Tapis course','Kettlebell swing','Burpees','Mountain climbers'],
+  'PISCINE':['Crawl 50m','Dos crawlé 50m','Brasse douce 50m'],
+};
+
+const mkEx = (name, sets, reps, kg, rest, note, target, unit, sciat) =>
+  ({id: Math.random().toString(36).slice(2), name, sets, reps, kg, rest, note: note||'', target: target||null, unit: unit||'kg', sciat: !!sciat});
+
+const DATA_DEFAULT = {
+  phase1: {
+    label:'Phase 1', color:'var(--d-jeu)',
+    sessions: {
+      lun:{ label:'Lundi — Épaules', color:'var(--d-lun)', exercises:[
+        mkEx('Développé militaire',4,8,42,120,'',44),
+        mkEx('Élévations latérales haltères',4,15,10,75,'9 kg/main'),
+        mkEx('Oiseau poulie',3,15,7.5,75,''),
+        mkEx('Face pull',3,15,25,60,''),
+        mkEx('Shrugs haltères',3,15,28,60,''),
+      ]},
+      mar:{ label:'Mardi — Pectoraux', color:'var(--d-mar)', exercises:[
+        mkEx('Développé couché barre',4,8,72,150,'',75),
+        mkEx('Développé incliné haltères',4,10,28,120,''),
+        mkEx('Écarté poulie basse (crossover)',3,15,12.5,75,''),
+        mkEx('Dips lestés',3,10,10,90,''),
+      ]},
+      mer:{ label:'Mercredi — Dos', color:'var(--d-mer)', exercises:[
+        mkEx('Soulevé de terre',4,6,120,180,'',125),
+        mkEx('Tractions lestées',4,8,10,120,''),
+        mkEx('Rowing barre',4,10,65,120,''),
+        mkEx('Tirage horizontal',3,12,60,90,''),
+      ]},
+      jeu:{ label:'Jeudi — Jambes', color:'var(--d-jeu)', exercises:[
+        mkEx('Leg press',4,10,93,120,'',97,undefined,true),
+        mkEx('Squat Smith',4,10,65,120,'',70,undefined,true),
+        mkEx('Fentes statiques',2,10,16,90,'','','kg/main',true),
+        mkEx('Leg curl assis machine',3,12,38,90,'',42),
+        mkEx('Hip thrust',2,20,20,90,'',24),
+        mkEx('Crunch poulie',3,15,25,60,''),
+      ]},
+      ven:{ label:'Vendredi — HIIT', color:'var(--d-ven)', exercises:[
+        mkEx('Assault bike',5,30,0,60,'','','s'),
+        mkEx('Kettlebell swing',5,20,24,45,''),
+        mkEx('Burpees',5,15,0,45,''),
+        mkEx('Mountain climbers',5,40,0,30,''),
+      ]},
+    }
+  },
+  vacances: {
+    label:'Vacances', color:'var(--d-vac)',
+    sessions: {
+      a:{ label:'Full Body A', color:'var(--d-vac)', note:'🏆 Full Body · Club de sport · 3×10-12 force / 3×15 isolation · 🦴 Adapté sciatique',
+        groupes: {
+          'JAMBES':['Leg press','Leg curl assis machine','Leg extension'],
+          'DOS':['Tirage poulie haute prise large','Rowing assis poulie basse'],
+          'PECTORAUX':['Presse pectorale machine inclinée'],
+          'ÉPAULES':['Développé militaire haltères assis','Élévations latérales haltères'],
+          'BRAS':['Curl haltères','Triceps extension poulie haute'],
+        },
+        exercises:[
+          mkEx('Leg press',3,10,205,120,'205 kg en press + 25+25+15x2',97,'kg',true),
+          mkEx('Leg curl assis machine',3,12,41,90,'Machine allongée sur le ventre'),
+          mkEx('Leg extension',3,12,50,90,''),
+          mkEx('Tirage poulie haute prise large',3,10,54,90,'',55),
+          mkEx('Rowing assis poulie basse',3,10,45,90,''),
+          mkEx('Presse pectorale machine inclinée',3,10,57,90,'Échec 8/10 dernière rep'),
+          mkEx('Développé militaire haltères assis',3,10,16,90,'16 kg/main',18,'kg/main'),
+          mkEx('Élévations latérales haltères',3,15,8,90,'12x10kg',10,'kg/main'),
+          mkEx('Curl haltères',3,12,10,75,'32kg au preacher',12,'kg/main'),
+          mkEx('Triceps extension poulie haute',3,12,25,75,'',55),
+        ]
+      },
+      b:{ label:'Full Body B', color:'var(--d-vac)', note:'🏆 Full Body · Club de sport · 3×10-12 force / 3×15 isolation · 🦴 Adapté sciatique',
+        groupes: {
+          'JAMBES':['Leg press','Fentes statiques'],
+          'DOS':['Tirage poulie haute prise large','Rowing haltère unilatéral avec appui'],
+          'PECTORAUX':['Presse pectorale machine inclinée'],
+          'ÉPAULES':['Élévations latérales haltères','Élévations frontales alternées'],
+          'BRAS':['Curl marteau','Triceps extension poulie haute'],
+        },
+        exercises:[
+          mkEx('Leg press',3,10,205,120,'On essaye 205',97,'kg',true),
+          mkEx('Fentes statiques',3,10,16,90,'Ok 16kg x2 x12 rep',16,'kg/jambe',true),
+          mkEx('Tirage poulie haute prise large',3,10,54,90,'',55),
+          mkEx('Rowing haltère unilatéral avec appui',3,10,20,90,'20 kg/main',22,'kg/main'),
+          mkEx('Presse pectorale machine inclinée',3,12,57,90,'On essaye 57'),
+          mkEx('Élévations latérales haltères',3,15,10,90,'Je suis monté à 10kg',10,'kg/main'),
+          mkEx('Élévations frontales alternées',3,12,10,90,'10 kg/main',10,'kg/main'),
+          mkEx('Curl marteau',3,12,12,75,'12 kg/main',12,'kg/main'),
+          mkEx('Triceps extension poulie haute',3,12,25,75,'Ressenti différent',55),
+        ]
+      },
+      c:{ label:'Full Body C', color:'var(--d-vac)', note:'🏆 Full Body · Club de sport · 3×10-12 force / 3×15 isolation · 🦴 Adapté sciatique',
+        groupes: {
+          'JAMBES + FESSIERS':['Leg press','Abducteur machine assis','Leg curl assis machine'],
+          'DOS + ÉPAULE POST.':['Tirage poulie haute prise large','Face pull'],
+          'PECTORAUX':['Écarté poulie basse (crossover)'],
+          'ÉPAULES':['Oiseau penché (rear delt)','Élévations latérales haltères'],
+          'BRAS':['Curl haltères','Triceps extension poulie haute'],
+        },
+        exercises:[
+          mkEx('Leg press',3,10,205,120,'',97,'kg',true),
+          mkEx('Abducteur machine assis',3,15,50,75,'35 env pour adducteurs'),
+          mkEx('Leg curl assis machine',3,12,50,90,'Remplacer par fentes bulgares'),
+          mkEx('Tirage poulie haute prise large',3,10,90,90,'Remplacer par tirage convergent',55),
+          mkEx('Face pull',3,15,20,75,'Ressenti différent poulie neoness',38),
+          mkEx('Écarté poulie basse (crossover)',3,12,6.8,90,''),
+          mkEx('Oiseau penché (rear delt)',3,12,8,90,'8 kg/main',10,'kg/main'),
+          mkEx('Élévations latérales haltères',3,15,10,90,'3x12 rep à 10kg',10,'kg/main'),
+          mkEx('Curl haltères',3,12,10,75,'10/12 Échec 3e rep',12,'kg/main'),
+          mkEx('Triceps extension poulie haute',3,12,25,75,'',55),
+        ]
+      },
+      p:{ label:'🏊 Piscine', color:'var(--d-mer)', exercises:[
+        mkEx('Crawl 50m',4,1,0,60,'','','longueur'),
+        mkEx('Dos crawlé 50m',2,1,0,45,'','','longueur'),
+        mkEx('Brasse douce 50m',2,1,0,45,'','','longueur'),
+      ]},
+    }
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+const KEY = 'gymv5_vanilla_v1';
+let STATE = {};
+
+function loadState() {
+  try { STATE = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) { STATE = {}; }
+}
+function saveState() {
+  try { localStorage.setItem(KEY, JSON.stringify(STATE)); } catch(e) {}
+}
+function getPrograms() {
+  if (!STATE.programs) STATE.programs = JSON.parse(JSON.stringify(DATA_DEFAULT));
+  return STATE.programs;
+}
+function getActiveProgram() {
+  return STATE.activeProg || 'vacances';
+}
+function getActiveSession() {
+  const prog = getActiveProgram();
+  const sessions = getPrograms()[prog].sessions;
+  const keys = Object.keys(sessions);
+  const saved = STATE['sess_'+prog];
+  return (saved && sessions[saved]) ? saved : keys[0];
+}
+function setActiveProgram(p) { STATE.activeProg = p; saveState(); }
+function setActiveSession(p, s) { STATE['sess_'+p] = s; saveState(); }
+
+// ============================================================
+// TIMER
+// ============================================================
+let timerInterval = null;
+let timerTotal = 0;
+let timerRemaining = 0;
+let timerLabel = '';
+
+function startTimer(secs, label) {
+  timerTotal = secs;
+  timerRemaining = secs;
+  timerLabel = label || 'Repos';
+  updateTimerUI();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      clearInterval(timerInterval);
+      try { new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA...').play(); } catch(e) {}
+    }
+    updateTimerUI();
+  }, 1000);
+  showTimerOverlay();
+}
+
+function updateTimerUI() {
+  const pct = timerTotal > 0 ? timerRemaining / timerTotal : 0;
+  const circ = 2 * Math.PI * 88;
+  const offset = circ * (1 - pct);
+  const arc = document.getElementById('timer-arc');
+  const num = document.getElementById('timer-num');
+  const lbl = document.getElementById('timer-label');
+  const mini = document.getElementById('mini-num');
+  const hue = pct > 0.5 ? 'var(--good)' : pct > 0.25 ? 'var(--warn)' : 'var(--danger)';
+  if (arc) { arc.style.strokeDashoffset = offset; arc.style.stroke = hue; }
+  if (num) num.textContent = timerRemaining;
+  if (lbl) lbl.textContent = timerLabel;
+  if (mini) mini.textContent = timerRemaining + 's';
+  const miniEl = document.getElementById('mini-timer');
+  if (miniEl) {
+    miniEl.style.display = timerInterval && timerRemaining > 0 ? 'flex' : 'none';
+  }
+}
+
+function showTimerOverlay() {
+  document.getElementById('timer-overlay').classList.add('show');
+  document.getElementById('mini-timer').style.display = 'none';
+}
+function hideTimerOverlay() {
+  document.getElementById('timer-overlay').classList.remove('show');
+  if (timerInterval && timerRemaining > 0) {
+    document.getElementById('mini-timer').style.display = 'flex';
+  }
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRemaining = 0;
+  hideTimerOverlay();
+  document.getElementById('mini-timer').style.display = 'none';
+}
+function skipTimer() {
+  stopTimer();
+}
+
+// ============================================================
+// MODAL CATALOGUE
+// ============================================================
+let modalCallback = null;
+
+function openCatalogModal(title, callback) {
+  modalCallback = callback;
+  document.getElementById('modal-title').textContent = title;
+  const list = document.getElementById('modal-list');
+  list.innerHTML = '';
+  for (const [cat, exs] of Object.entries(CATALOG)) {
+    const catEl = document.createElement('div');
+    catEl.className = 'modal-cat';
+    catEl.textContent = cat;
+    list.appendChild(catEl);
+    exs.forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'modal-item';
+      item.textContent = name;
+      item.onclick = () => { closeModal(); if (modalCallback) modalCallback(name); };
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('show');
+  }
+}
+
+// ============================================================
+// RENDER HOME
+// ============================================================
+function renderHome() {
+  const programs = getPrograms();
+  const activeProg = getActiveProgram();
+  const activeSess = getActiveSession();
+  const prog = programs[activeProg];
+  const sess = prog.sessions[activeSess];
+  const sessKeys = Object.keys(prog.sessions);
+
+  let html = '';
+
+  // Header
+  html += `<div class="screen-header">
+    <div class="screen-title" style="color:${prog.color}">Programme Stéphane</div>
+    <div class="screen-sub">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+  </div>`;
+
+  // Programme tabs
+  html += '<div class="prog-tabs">';
+  for (const [pk, pv] of Object.entries(programs)) {
+    html += `<div class="prog-tab ${pk===activeProg?'active':''}" 
+      style="${pk===activeProg?'background:'+pv.color+';border-color:'+pv.color+';color:#000':''}"
+      onclick="selectProg('${pk}')">${pv.label}</div>`;
+  }
+  html += '</div>';
+
+  // Session tabs
+  html += '<div class="sess-tabs">';
+  sessKeys.forEach(sk => {
+    const sv = prog.sessions[sk];
+    const isActive = sk === activeSess;
+    html += `<div class="sess-tab ${isActive?'active':''}"
+      style="${isActive?'background:'+sv.color+';color:#000':''}"
+      onclick="selectSess('${sk}')">${sv.label}</div>`;
+  });
+  html += '</div>';
+
+  // Note
+  if (sess.note) {
+    html += `<div class="note-card">${sess.note}</div>`;
+  }
+
+  // Exercices avec groupes
+  const groupes = sess.groupes || {};
+  const groupNames = Object.keys(groupes);
+  
+  if (groupNames.length > 0) {
+    // Affichage par groupes
+    groupNames.forEach((grp, gi) => {
+      html += `<div class="groupe-label">${grp}</div>`;
+      const exNames = groupes[grp];
+      const exList = sess.exercises.filter(e => exNames.includes(e.name));
+      exList.forEach((ex, i) => {
+        html += renderExCard(ex, activeProg, activeSess, gi*10+i);
+      });
+    });
+    // Exercices sans groupe
+    const grouped = Object.values(groupes).flat();
+    const ungrouped = sess.exercises.filter(e => !grouped.includes(e.name));
+    ungrouped.forEach((ex, i) => {
+      html += renderExCard(ex, activeProg, activeSess, 900+i);
+    });
+  } else {
+    sess.exercises.forEach((ex, i) => {
+      html += renderExCard(ex, activeProg, activeSess, i);
+    });
+  }
+
+  // Bouton ajouter
+  html += `<button class="add-ex-btn" onclick="addExercice('${activeProg}','${activeSess}')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Ajouter un exercice
+  </button>`;
+
+  html += '<div style="height:20px"></div>';
+
+  document.getElementById('screen-home').innerHTML = html;
+}
+
+function renderExCard(ex, prog, sess, idx) {
+  const kgStr = ex.kg > 0 ? ex.kg + ' ' + ex.unit : 'PdC';
+  const targetStr = ex.target ? `<span class="tag target">🎯 ${ex.target} ${ex.unit}</span>` : '';
+  const sciatStr = ex.sciat ? `<span class="tag sciat">🦴 sciat</span>` : '';
+  const timerLabel = ex.rest > 0 ? ex.rest + 's' : '—';
+  const animDelay = Math.min(idx * 0.04, 0.4);
+
+  return `<div class="ex-card" id="excard-${ex.id}" style="animation-delay:${animDelay}s">
+    <div class="ex-top">
+      <div class="ex-name">${ex.name}</div>
+      <button class="ex-timer-btn" onclick="startTimer(${ex.rest},'${ex.name.slice(0,20)}')" 
+        ${ex.rest<=0?'disabled style="opacity:.3"':''}>${timerLabel}</button>
+      <button class="ex-edit-btn" onclick="toggleEdit('${ex.id}','${prog}','${sess}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ex-tags">
+      <span class="tag">${ex.sets}×${ex.reps}</span>
+      <span class="tag">${kgStr}</span>
+      ${targetStr}${sciatStr}
+    </div>
+    ${ex.note ? `<div class="ex-note">${ex.note}</div>` : ''}
+    <div class="edit-panel" id="edit-${ex.id}">
+      <div class="edit-row">
+        <span class="edit-label">Exercice</span>
+        <button class="btn btn-secondary btn-sm" style="flex:1;text-align:left" 
+          onclick="changeExName('${ex.id}','${prog}','${sess}')">📝 ${ex.name}</button>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Séries</span>
+        <input class="edit-input" type="number" value="${ex.sets}" min="1" max="10"
+          onchange="updateEx('${ex.id}','${prog}','${sess}','sets',this.value)"/>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Reps</span>
+        <input class="edit-input" type="number" value="${ex.reps}" min="1" max="50"
+          onchange="updateEx('${ex.id}','${prog}','${sess}','reps',this.value)"/>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Charge</span>
+        <input class="edit-input" type="number" value="${ex.kg}" min="0" step="0.5"
+          onchange="updateEx('${ex.id}','${prog}','${sess}','kg',this.value)"/>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Cible</span>
+        <input class="edit-input" type="number" value="${ex.target||''}" min="0" step="0.5"
+          placeholder="—" onchange="updateEx('${ex.id}','${prog}','${sess}','target',this.value)"/>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Repos</span>
+        <input class="edit-input" type="number" value="${ex.rest}" min="0" step="5"
+          onchange="updateEx('${ex.id}','${prog}','${sess}','rest',this.value)"/>
+      </div>
+      <div class="edit-row">
+        <span class="edit-label">Note</span>
+        <input class="edit-input" type="text" value="${ex.note||''}"
+          onchange="updateEx('${ex.id}','${prog}','${sess}','note',this.value)"/>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-primary btn-sm" onclick="toggleEdit('${ex.id}','${prog}','${sess}')">✓ OK</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteEx('${ex.id}','${prog}','${sess}')">Supprimer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function selectProg(p) { setActiveProgram(p); renderHome(); }
+function selectSess(s) { setActiveSession(getActiveProgram(), s); renderHome(); }
+
+function toggleEdit(id, prog, sess) {
+  const panel = document.getElementById('edit-'+id);
+  const card = document.getElementById('excard-'+id);
+  if (panel) {
+    const open = panel.classList.toggle('open');
+    if (card) card.classList.toggle('editing', open);
+  }
+}
+
+function updateEx(id, prog, sess, field, value) {
+  const programs = getPrograms();
+  const exercises = programs[prog].sessions[sess].exercises;
+  const ex = exercises.find(e => e.id === id);
+  if (!ex) return;
+  if (['sets','reps','kg','target','rest'].includes(field)) {
+    ex[field] = value === '' ? null : parseFloat(value);
+  } else {
+    ex[field] = value;
+  }
+  STATE.programs = programs;
+  saveState();
+  // Refresh juste le tag sans re-render complet
+  const card = document.getElementById('excard-'+id);
+  if (card) {
+    const tags = card.querySelector('.ex-tags');
+    if (tags) {
+      const kgStr = ex.kg > 0 ? ex.kg + ' ' + ex.unit : 'PdC';
+      const targetStr = ex.target ? `<span class="tag target">🎯 ${ex.target} ${ex.unit}</span>` : '';
+      const sciatStr = ex.sciat ? `<span class="tag sciat">🦴 sciat</span>` : '';
+      tags.innerHTML = `<span class="tag">${ex.sets}×${ex.reps}</span><span class="tag">${kgStr}</span>${targetStr}${sciatStr}`;
+    }
+    const noteEl = card.querySelector('.ex-note');
+    if (ex.note && noteEl) noteEl.textContent = ex.note;
+    const timerBtn = card.querySelector('.ex-timer-btn');
+    if (timerBtn) { timerBtn.textContent = ex.rest > 0 ? ex.rest+'s' : '—'; timerBtn.disabled = ex.rest <= 0; }
+  }
+}
+
+function deleteEx(id, prog, sess) {
+  if (!confirm('Supprimer cet exercice ?')) return;
+  const programs = getPrograms();
+  programs[prog].sessions[sess].exercises = programs[prog].sessions[sess].exercises.filter(e => e.id !== id);
+  STATE.programs = programs;
+  saveState();
+  renderHome();
+}
+
+function changeExName(id, prog, sess) {
+  openCatalogModal('Choisir un exercice', (name) => {
+    const programs = getPrograms();
+    const ex = programs[prog].sessions[sess].exercises.find(e => e.id === id);
+    if (ex) { ex.name = name; STATE.programs = programs; saveState(); renderHome(); }
+  });
+}
+
+function addExercice(prog, sess) {
+  openCatalogModal('Ajouter un exercice', (name) => {
+    const programs = getPrograms();
+    const newEx = mkEx(name, 3, 10, 0, 90, '');
+    programs[prog].sessions[sess].exercises.push(newEx);
+    STATE.programs = programs;
+    saveState();
+    renderHome();
+  });
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const sessions = getPrograms()[getActiveProgram()].sessions;
+  const allEx = Object.values(sessions).flatMap(s => s.exercises);
+  const totalVol = allEx.reduce((s,e) => s + (e.kg||0)*(e.reps||0)*(e.sets||0), 0);
+  const totalEx = allEx.length;
+  const totalSets = allEx.reduce((s,e) => s + (e.sets||0), 0);
+
+  let html = '';
+  html += `<div class="screen-header">
+    <div class="screen-title">Stats</div>
+    <div class="screen-sub">Programme ${getPrograms()[getActiveProgram()].label}</div>
+  </div>`;
+
+  html += `<div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--acc)">${totalEx}</div>
+      <div class="stat-label">Exercices</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--d-mer)">${totalSets}</div>
+      <div class="stat-label">Séries totales</div>
+    </div>
+    <div class="stat-card" style="grid-column:1/-1">
+      <div class="stat-val" style="color:var(--d-jeu)">${totalVol > 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg'}</div>
+      <div class="stat-label">Volume de charge total (programme)</div>
+    </div>
+  </div>`;
+
+  // Liste des séances
+  html += `<div style="padding:0 20px 8px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--fg3)">Séances</div>`;
+  for (const [sk, sv] of Object.entries(sessions)) {
+    const vol = sv.exercises.reduce((s,e) => s + (e.kg||0)*(e.reps||0)*(e.sets||0), 0);
+    html += `<div style="margin:0 20px 8px;background:var(--surface);border-radius:var(--r2);
+      padding:14px;border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:600;font-size:14px">${sv.label}</div>
+        <div style="font-size:12px;color:var(--fg3);margin-top:2px">${sv.exercises.length} exercices · ${sv.exercises.reduce((s,e)=>s+(e.sets||0),0)} séries</div>
+      </div>
+      <div style="font-family:var(--font-disp);font-size:16px;font-weight:800;color:${sv.color}">
+        ${vol > 1000 ? (vol/1000).toFixed(1)+'t' : vol+'kg'}
+      </div>
+    </div>`;
+  }
+
+  html += '<div style="height:20px"></div>';
+  document.getElementById('screen-stats').innerHTML = html;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
+  if (tab === 'stats') renderStats();
+  if (tab === 'home') renderHome();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+renderHome();
+</script>
+</body>
+</html>
